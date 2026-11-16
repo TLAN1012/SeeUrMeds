@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "藥看仔細 SeeUrMeds",
   "short_name": "SeeUrMeds",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "在健保雲端藥歷頁旁邊列出病人用藥的外觀照、形狀、顏色與刻字。所有比對都在本機瀏覽器進行，不外送病人資料。",
   "minimum_chrome_version": "116",
   "permissions": ["sidePanel"],

@@ -12,8 +12,9 @@ button:hover { border-color:var(--accent); }
 #status { margin:10px 12px; color:var(--sub); } #status:empty { display:none; }
 main { padding:0 12px 12px; }
 h2 { position:sticky; top:45px; z-index:1; margin:14px -12px 8px; padding:6px 12px; font-size:14px; background:var(--bg);
-  border-bottom:2px solid var(--accent); display:flex; justify-content:space-between; gap:8px; }
-h2 small { font-weight:400; color:var(--sub); }
+  border-bottom:2px solid var(--accent); display:flex; gap:10px; align-items:baseline; }
+h2 small { font-weight:400; color:var(--sub); margin-left:auto; text-align:right; }
+h2 .icd { font-weight:600; color:var(--accent); font-family:ui-monospace,Menlo,Consolas,monospace; }
 .med { display:grid; grid-template-columns:132px 1fr; gap:10px; padding:10px; margin-bottom:8px; background:var(--card);
   border:1px solid var(--line); border-radius:8px; }
 .pic { width:132px; height:100px; border-radius:6px; background:var(--bg); display:flex; align-items:center; justify-content:center;

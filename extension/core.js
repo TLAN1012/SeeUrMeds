@@ -9,6 +9,12 @@
     return (name || '').toUpperCase().replace(PACK, '').replace(/[^A-Z0-9一-鿿]/g, '').slice(0, 300);
   }
 
+  // 從主診斷欄取 ICD-10 碼(例「急性上呼吸道感染 J069」→ J069);取不到回空字串
+  function icdCode(text) {
+    const m = /\b[A-Z]\d[0-9A-Z](?:\.?[0-9A-Z]{1,4})?\b/.exec((text || '').toUpperCase());
+    return m ? m[0] : '';
+  }
+
   const squash = (s) => (s || '').replace(/\s+/g, '');
   const clean = (s) => (s || '').replace(/[ \t ]+/g, ' ').replace(/\s*\n\s*/g, '\n').trim();
   const cellText = (el) => clean(el.innerText !== undefined ? el.innerText : el.textContent);
@@ -16,7 +22,7 @@
   // 表頭關鍵字 → 欄位。用「包含」比對,健保署改欄名的空白或換行不會壞
   const COLS = [
     ['drug', '藥品名稱'], ['ingredient', '成分名稱'], ['date', '就醫日期'], ['source', '來源'],
-    ['usage', '用法用量'], ['days', '給藥日數'], ['qty', '藥品用量'],
+    ['usage', '用法用量'], ['days', '給藥日數'], ['qty', '藥品用量'], ['diag', '主診斷'],
   ];
 
   function headerMap(cells) {
@@ -86,6 +92,7 @@
         usage: get(row, 'usage').replace(/\n/g, ' '),
         days: squash(get(row, 'days')),
         qty: squash(get(row, 'qty')),
+        icd: icdCode(get(row, 'diag')),
       });
     }
     return meds;
@@ -95,14 +102,14 @@
   function groupMeds(meds) {
     const groups = new Map();
     for (const m of meds) {
-      const key = m.date + '\u0001' + m.source;
-      if (!groups.has(key)) groups.set(key, { date: m.date, source: m.source, items: new Map() });
+      const key = m.date + '\u0001' + m.source + '\u0001' + (m.icd || '');
+      if (!groups.has(key)) groups.set(key, { date: m.date, source: m.source, icd: m.icd || '', items: new Map() });
       const items = groups.get(key).items;
       const k = normName(m.drug) || m.drug;
       if (!items.has(k)) items.set(k, m);
     }
     return Array.from(groups.values())
-      .map((g) => ({ date: g.date, source: g.source, items: Array.from(g.items.values()) }))
+      .map((g) => ({ date: g.date, source: g.source, icd: g.icd, items: Array.from(g.items.values()) }))
       .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
   }
 
@@ -114,7 +121,7 @@
     return o;
   }
 
-  const api = { normName, readMeds, groupMeds, lookup, findMedTable };
+  const api = { icdCode, normName, readMeds, groupMeds, lookup, findMedTable };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SeeUrMeds = api;
 })(typeof self !== 'undefined' ? self : this);

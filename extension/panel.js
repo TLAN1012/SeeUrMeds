@@ -81,6 +81,7 @@
     let hit = 0, total = 0;
     for (const g of groupMeds(meds)) {
       const h = el('h2', '', g.date || '（沒有日期）');
+      if (g.icd) h.append(el('span', 'icd', g.icd));
       h.append(el('small', '', g.source));
       frag.append(h);
       for (const m of g.items) {
