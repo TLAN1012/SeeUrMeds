@@ -48,7 +48,20 @@
         c += cs;
       }
     });
-    return grid.map((row) => Array.from(row, (v) => (v === undefined ? '' : v)));
+    return grid.map((row, r) => Object.assign(Array.from(row, (v) => (v === undefined ? '' : v)), { tr: trs[r] }));
+  }
+
+  // 健保雲端自己把異常的列標成紅字;讀得到就拿來用(參考值分男女、或寫法認不得時靠它)
+  function markedRed(tr) {
+    const view = tr && tr.ownerDocument && tr.ownerDocument.defaultView;
+    if (!view || !view.getComputedStyle) return false;
+    for (const td of Array.from(tr.children)) {
+      for (const node of [td, td.firstElementChild]) {
+        const m = node && /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(view.getComputedStyle(node).color || '');
+        if (m && +m[1] > 150 && +m[1] - Math.max(+m[2], +m[3]) > 70) return true;
+      }
+    }
+    return false;
   }
 
   // 在文件裡找用藥表格。表頭與內容可能被拆成兩張 table(凍結表頭的表格元件),所以內容列另外找
@@ -179,6 +192,7 @@
         specimen: oneLine(get(row, 'specimen')),
         date: squash(get(row, 'date')),
         source: get(row, 'source').split('\n')[0],     // 只留院所名
+        marked: markedRed(row.tr),
       });
     }
     return labs;
@@ -258,7 +272,7 @@
     let out = null;
     if (parts.length) {
       const a = parts[0], b = parts[1] || '';
-      out = range(a) || (b === '' ? null : null);
+      out = range(a) || (a === '' ? range(b) : null);       // 有的院所寫成 [][<150]
       if (!out && num(a) !== null && num(b) !== null) out = { lo: num(b), hi: num(a) };
       if (!out && num(a) !== null && b === '') out = null;
     } else out = range(t);
@@ -300,7 +314,7 @@
       g.seen.add(sig);
       g.points.push({
         date: lab.date, t: dateNum(lab.date), text: r.text, num: r.num, unit: r.unit, ref: lab.ref, range: ref,
-        flag: labFlag(r.num, ref), source: lab.source, item: lab.item,
+        flag: labFlag(r.num, ref) || (lab.marked ? 'A' : ''), source: lab.source, item: lab.item,   // A=健保雲端標紅,方向不明
       });
     }
     const out = dict.cats.map((cat) => ({ cat, items: [] }));

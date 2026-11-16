@@ -38,14 +38,15 @@ footer { padding:12px; color:var(--sub); font-size:12px; border-top:1px solid va
 .lspark { height:26px; }
 .lval { font-weight:600; text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; } .lval small { font-weight:400; color:var(--sub); }
 .ldate { grid-column:1 / -1; color:var(--sub); font-size:12px; }
-.H { color:var(--hi); } .L { color:var(--lo); }
+.H, .A { color:var(--hi); } .L { color:var(--lo); }
+.lval.H, .lval.L, .lval.A { font-weight:700; }
 .spark, .chart { display:block; width:100%; } .spark { height:26px; }
 .line { fill:none; stroke:var(--accent); stroke-width:1.5; } .band { fill:var(--accent); opacity:.12; }
-.dot { fill:var(--accent); } .dot.H { fill:var(--hi); } .dot.L { fill:var(--lo); }
+.dot { fill:var(--accent); } .dot.H, .dot.A { fill:var(--hi); } .dot.L { fill:var(--lo); }
 .axis { font-size:9px; fill:var(--sub); }
 .chart { padding:0 8px; }
 .hist { width:100%; border-collapse:collapse; font-size:13px; }
 .hist td { padding:4px 10px; border-top:1px solid var(--line); vertical-align:top; word-break:break-word; }
 .hist td:first-child { white-space:nowrap; color:var(--sub); } .hist .v { font-weight:600; white-space:nowrap; font-variant-numeric:tabular-nums; }
-.hist tr.H .v { color:var(--hi); } .hist tr.L .v { color:var(--lo); }
+.hist tr.H .v, .hist tr.A .v { color:var(--hi); } .hist tr.L .v { color:var(--lo); }
 .cat { margin-top:14px; } .cat > summary { cursor:pointer; color:var(--sub); padding:6px 0; }

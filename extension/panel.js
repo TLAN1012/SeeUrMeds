@@ -80,7 +80,8 @@
     if (hi === lo) { hi += 1; lo -= 1; }
     const lo0 = lo, hi0 = hi, pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
     const x0 = dayOf(pts[0].t), x1 = dayOf(pts[pts.length - 1].t);
-    const X = (p) => L + (x1 === x0 ? 0.5 : (dayOf(p.t) - x0) / (x1 - x0)) * (W - L - R);
+    // 全部同一天(同日兩筆)就依序平均排開,不要疊成一條直線
+    const X = (p) => L + (x1 === x0 ? (pts.length > 1 ? pts.indexOf(p) / (pts.length - 1) : 0.5) : (dayOf(p.t) - x0) / (x1 - x0)) * (W - L - R);
     const Y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
     if (big && range) {
       const top = range.hi !== null ? Y(range.hi) : T, bottom = range.lo !== null ? Y(range.lo) : H - B;
@@ -155,7 +156,7 @@
       }
     }
     list.replaceChildren(frag);
-    status.textContent = `畫面上 ${labs.length} 筆，整理成 ${kinds} 種，${trend} 種有兩次以上可看趨勢。↑↓ 依各院所自己的參考值判斷；單位不同不換算。只讀目前這一頁顯示的列。`;
+    status.textContent = `畫面上 ${labs.length} 筆，整理成 ${kinds} 種，${trend} 種有兩次以上可看趨勢。異常值變色：↑ 紅、↓ 藍，依各院所自己的參考值；健保雲端標紅的列也算。單位不同不換算。只讀目前這一頁顯示的列。`;
   }
 
   async function activeTabId() {

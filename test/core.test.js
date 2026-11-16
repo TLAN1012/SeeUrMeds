@@ -76,3 +76,10 @@ const wbc = gl.find((x) => x.cat === '血液常規').items[0];
 assert.deepStrictEqual(wbc.points.map((p) => p.plot), [true, false], '單位不同不畫進同一張圖');
 assert.strictEqual(gl.find((x) => x.cat === '未歸類').items[0].name, '沒看過的檢驗', '對不到的照原名列出,不丟掉');
 console.log('labs ok;字典', L.built, L.items.length, '條規則');
+assert.deepStrictEqual(c.parseRef('[][＜150]'), { lo: null, hi: 150 }, '上限寫在第二個括號');
+assert.deepStrictEqual(c.parseRef('[][ < 200]'), { lo: null, hi: 200 });
+assert.strictEqual(c.parseRef('[M:＞40 ; F:＞50][]'), null);
+{
+  const g = c.groupLabs([{ item: 'Creatinine', result: '1.42 mg/dL', unit: 'mg/dL', ref: '[男:0.7-1.3 女:0.6-1.1][]', specimen: '血液', date: '115/10/20', source: 'x', marked: true }], L);
+  assert.strictEqual(g.find((x) => x.items.length).items[0].points[0].flag, 'A', '參考值分男女時用健保雲端的紅字');
+}

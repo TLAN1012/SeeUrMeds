@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "藥看仔細 SeeUrMeds",
   "short_name": "SeeUrMeds",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "在健保雲端查詢系統旁邊列出病人用藥的外觀，並把不同院所的同一種檢驗整理在一起、畫出趨勢。全部在本機瀏覽器處理，不外送病人資料。",
   "minimum_chrome_version": "116",
   "permissions": ["sidePanel"],
