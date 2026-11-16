@@ -50,7 +50,7 @@ assert.strictEqual(key('Protein', { specimen: '血液' }), null);
   ['全套血液檢查Ｉ（八項） ;(CBC-I(WBC,RBC,HB,HCT,PLATELET COUNT,MCV,MCH,MCHC))', null],
   ['紅血球分佈變異係數', 'RDW'], ['Valproic acid', null]].forEach(([n, k]) => assert.strictEqual(key(n), k, n));
 
-assert.deepStrictEqual(c.parseResult('32.1 g/dL', 'g/dL'), { text: '32.1', num: 32.1, approx: null, unit: 'g/dL' });
+assert.deepStrictEqual(c.parseResult('32.1 g/dL', 'g/dL'), { text: '32.1', num: 32.1, approx: null, op: '', unit: 'g/dL' });
 assert.strictEqual(c.parseResult('Negative -', '').text, 'Negative');
 assert.strictEqual(c.parseResult('3-5 /HPF', '/HPF').num, null, '範圍不是單一數值');
 assert.strictEqual(c.parseResult('<0.5', '').num, null);
@@ -82,4 +82,21 @@ assert.strictEqual(c.parseRef('[M:＞40 ; F:＞50][]'), null);
 {
   const g = c.groupLabs([{ item: 'Creatinine', result: '1.42 mg/dL', unit: 'mg/dL', ref: '[男:0.7-1.3 女:0.6-1.1][]', specimen: '血液', date: '115/10/20', source: 'x', marked: true }], L);
   assert.strictEqual(g.find((x) => x.items.length).items[0].points[0].flag, 'A', '參考值分男女時用健保雲端的紅字');
+}
+assert.strictEqual(c.parseResult('１２.３ g/dL', 'g/dL').num, 12.3, '全形數字');
+{
+  const hi = c.parseResult('>1000 U/L', 'U/L'), lo = c.parseResult('<0.5 mg/dL', 'mg/dL');
+  assert.strictEqual(c.labFlag(hi.num, { lo: 0, hi: 40 }, hi.approx, hi.op), 'H', '>1000 超過上限');
+  assert.strictEqual(c.labFlag(lo.num, { lo: 0.7, hi: 1.3 }, lo.approx, lo.op), 'L', '<0.5 低於下限');
+  assert.strictEqual(c.labFlag(lo.num, { lo: null, hi: 5 }, lo.approx, lo.op), '', '<0.5 不判高');
+  assert.strictEqual(c.labFlag(hi.num, { lo: 2000, hi: null }, hi.approx, hi.op), '', '>1000 不判低');
+}
+{
+  const mk = (drug, date, days, source) => ({ drug, date, days: String(days), source: source || 'A', usage: 'QD', ingredient: '' });
+  const meds = [mk('NORVASC TABLETS 5MG', '115/10/20', 28), mk('NORVASC TABLETS 5MG', '115/08/25', 84, 'B'), mk('GLUCOPHAGE 500MG', '115/09/01', 30),
+    mk('LIPITOR 10MG', '115/02/10', 28), mk('KEPPRA 500MG', '115/09/01', 27), mk('X', '', 28), mk('Y', '115/11/01', '')];
+  const out = c.longTermMeds(meds, new Date(2026, 10, 16));
+  assert.deepStrictEqual(out.map((m) => m.drug + '@' + m.date), ['NORVASC TABLETS 5MG@115/10/20', 'GLUCOPHAGE 500MG@115/09/01'], '長期用藥:半年內、≥28 天、去重留最近');
+  assert.strictEqual(c.longTermMeds([mk('A', '115/05/16', 28)], new Date(2026, 10, 16)).length, 1, '剛好半年算在內');
+  assert.strictEqual(c.longTermMeds([mk('A', '115/05/15', 28)], new Date(2026, 10, 16)).length, 0, '超過半年不算');
 }

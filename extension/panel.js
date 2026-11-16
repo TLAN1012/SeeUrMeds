@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  const { groupMeds, lookup, groupLabs } = self.SeeUrMeds;
+  const { groupMeds, lookup, groupLabs, longTermMeds } = self.SeeUrMeds;
   const IMG = 'https://mcp.fda.gov.tw/insert/shapeImg/';
   const $ = (id) => document.getElementById(id);
   let dataPromise = null, labDictPromise = null;
@@ -184,6 +184,25 @@
     $('built').textContent = '對照表 ' + data.built + '。';
     const frag = document.createDocumentFragment();
     let hit = 0, total = 0;
+    const long = longTermMeds(meds);
+    if (long.length) {
+      const box = el('details', 'long');
+      box.open = true;
+      box.append(el('summary', '', `長期用藥（近半年、28 天以上）${long.length} 種`));
+      const ul = el('ul');
+      for (const m of long) {
+        const info = lookup(data, m.drug);
+        const li = el('li');
+        li.append(el('b', '', m.drug));
+        if (info && info.name_zh) li.append(' ', el('span', 'zh', info.name_zh));
+        const ing = m.ingredient || (info && info.ingredients);
+        const sub = [ing, [m.usage, m.days + ' 天'].filter(Boolean).join(' '), '最近 ' + m.date + ' ' + m.source].filter(Boolean).join('・');
+        li.append(el('div', 'sub', sub));
+        ul.append(li);
+      }
+      box.append(ul);
+      frag.append(box);
+    }
     for (const g of groupMeds(meds)) {
       const h = el('h2', '', g.date || '（沒有日期）');
       if (g.icd) h.append(el('span', 'icd', g.icd));

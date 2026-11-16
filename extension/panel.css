@@ -50,3 +50,7 @@ footer { padding:12px; color:var(--sub); font-size:12px; border-top:1px solid va
 .hist td:first-child { white-space:nowrap; color:var(--sub); } .hist .v { font-weight:600; white-space:nowrap; font-variant-numeric:tabular-nums; }
 .hist tr.H .v, .hist tr.A .v { color:var(--hi); } .hist tr.L .v { color:var(--lo); }
 .cat { margin-top:14px; } .cat > summary { cursor:pointer; color:var(--sub); padding:6px 0; }
+
+.long { margin:8px 0 4px; border:1px solid var(--line); border-radius:8px; padding:6px 10px; }
+.long > summary { cursor:pointer; font-weight:600; }
+.long ul { margin:6px 0 2px; padding-left:18px; } .long li { margin:5px 0; } .long li b { font-weight:600; word-break:break-word; }

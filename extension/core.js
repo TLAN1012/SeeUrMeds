@@ -28,7 +28,7 @@
   function headerMap(cells) {
     const map = {};
     cells.forEach((c, i) => {
-      const t = squash(String(c.textContent).split('\n')[0]);
+      const t = squash(String(c.textContent));     // 表頭常一字一行(給/藥/日/數),整格去空白再比
       for (const [key, label] of COLS) if (!(key in map) && t.includes(label)) map[key] = i;
     });
     return ('drug' in map && 'date' in map) ? map : null;
@@ -240,7 +240,8 @@
 
   // 檢驗結果 → 數值與顯示文字。「32.1 g/dL」→ 32.1;「Negative -」→ 文字 Negative;「<0.5」保留比較符號
   function parseResult(result, unit) {
-    let text = (result || '').trim();
+    let text = (result || '').normalize('NFKC').trim();      // 全形數字、全形 < > 轉半形
+    unit = (unit || '').normalize('NFKC');
     if (unit && text.toLowerCase().endsWith(unit.toLowerCase())) text = text.slice(0, text.length - unit.length).trim();
     text = text.replace(/\s+-$/, '').trim();
     const m = /^([<>≦≧≤≥]=?)?\s*(-?\d+(?:,\d{3})*(?:\.\d+)?)(?![\d\/:+-])/.exec(text);
@@ -251,7 +252,7 @@
       if (!unit && rest) { unit = rest; }
       text = (m[1] || '') + m[2];
     }
-    return { text, num: m && !m[1] ? num : null, approx: m && m[1] ? num : null, unit: unit || '' };
+    return { text, num: m && !m[1] ? num : null, approx: m && m[1] ? num : null, op: m && m[1] ? m[1][0] : '', unit: unit || '' };
   }
 
   // 參考值 →{lo, hi}。看得懂的格式:[31-36][]、[上限][下限]、<130、>60、3.5~5.0;[0][0]、分男女的不判斷
@@ -282,7 +283,13 @@
     return out;
   }
 
-  function labFlag(num, ref) {
+  // op:結果寫成「>1000」「<0.5」時的符號。只有方向確定才判(>1000 超過上限算高;<0.5 不知道實際多少,不拿來判高)
+  function labFlag(num, ref, approx, op) {
+    if (num === null && ref && approx != null) {
+      if (/[>≧≥]/.test(op) && ref.hi !== null && approx >= ref.hi) return 'H';
+      if (/[<≦≤]/.test(op) && ref.lo !== null && approx <= ref.lo) return 'L';
+      return '';
+    }
     if (num === null || !ref) return '';
     if (ref.hi !== null && num > ref.hi) return 'H';
     if (ref.lo !== null && num < ref.lo) return 'L';
@@ -295,6 +302,23 @@
     if (!m) return 0;
     const y = +m[1] < 1911 ? +m[1] + 1911 : +m[1];
     return y * 10000 + +m[2] * 100 + +m[3];
+  }
+
+  // 長期用藥:最近半年內、給藥日數 ≥ 28 天;同一個藥(不分院所、不分次)只留最近一次,新到舊
+  // today:Date,預設現在
+  function longTermMeds(meds, today) {
+    const t = today || new Date();
+    const c = new Date(t.getFullYear(), t.getMonth() - 6, t.getDate());
+    const cutoff = c.getFullYear() * 10000 + (c.getMonth() + 1) * 100 + c.getDate();
+    const seen = new Map();
+    for (const m of meds) {
+      const d = dateNum(m.date);
+      if (!d || d < cutoff || !(parseInt(m.days, 10) >= 28)) continue;
+      const k = normName(m.drug) || m.drug;
+      const old = seen.get(k);
+      if (!old || d > old.d) seen.set(k, { d, m });
+    }
+    return Array.from(seen.values()).sort((a, b) => b.d - a.d).map((x) => x.m);
   }
 
   // 同一種檢驗(不分院所、不分寫法)收在一起,新到舊;對不到字典的照原名各自成組放「其他」
@@ -314,7 +338,7 @@
       g.seen.add(sig);
       g.points.push({
         date: lab.date, t: dateNum(lab.date), text: r.text, num: r.num, unit: r.unit, ref: lab.ref, range: ref,
-        flag: labFlag(r.num, ref) || (lab.marked ? 'A' : ''), source: lab.source, item: lab.item,   // A=健保雲端標紅,方向不明
+        flag: labFlag(r.num, ref, r.approx, r.op) || (lab.marked ? 'A' : ''), source: lab.source, item: lab.item,   // A=健保雲端標紅,方向不明
       });
     }
     const out = dict.cats.map((cat) => ({ cat, items: [] }));
@@ -331,7 +355,7 @@
   }
 
   const api = { icdCode, normName, readMeds, groupMeds, lookup, findMedTable,
-    readLabs, findLabTable, normLabName, labCtx, matchLab, parseResult, parseRef, labFlag, dateNum, groupLabs };
+    readLabs, findLabTable, normLabName, labCtx, matchLab, parseResult, parseRef, labFlag, dateNum, groupLabs, longTermMeds };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SeeUrMeds = api;
 })(typeof self !== 'undefined' ? self : this);

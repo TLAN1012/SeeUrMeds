@@ -1,0 +1,58 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>DOM 測試(假資料)</title>
+<pre id="out">running</pre>
+<script src="../extension/core.js"></script>
+<script>
+// 在真的瀏覽器裡檢查「讀表格」:表頭拆表、欄位換順序、紅字標在不同層、空表。全部假資料。
+// 用法:Chrome 開這頁,或 headless --dump-dom 看 #out
+const H = ['項次', '檢驗日期', '檢驗項目', '檢驗結果', '單位', '參考值', '檢體採檢<br>方法', '來源', '費用年月'];
+const ROWS = [
+  ['1', '115/05/11', 'HDL-C', '35 mg/dl', 'mg/dl', '[M:＞40 ; F:＞50][]', '血液', '示範診所<br>門診<br>0000000003', '115/05'],
+  ['2', '115/05/11', 'Triglyceride', '287 mg/dl', 'mg/dl', '[][＜150]', '血液', '示範診所<br>門診<br>0000000003', '115/05'],
+  ['3', '115/05/11', 'HbA1c', '5.5 %', '%', '[4.8-5.9][]', '血液', '示範診所<br>門診<br>0000000003', '115/05'],
+  ['4', '114/12/26', 'Creatinine(B)', '0.84 mg/dl', 'mg/dl', '[男:0.7-1.20; 女:0.5-0.90][]', '血液', '示範診所<br>門診<br>0000000003', '114/12'],
+];
+const tds = (r, wrap) => r.map((c) => '<td>' + (wrap ? wrap(c) : c) + '</td>').join('');
+const head = (h) => '<tr>' + h.map((c) => '<th>' + c + '</th>').join('') + '</tr>';
+const CSS = '<style>.abn,.abn td{color:#d32f2f}.sp{color:rgb(229,57,53)}a{color:#0563c1}td{color:#222}</style>';
+const cases = {
+  '單一表格,紅字標在 tr 的 class': CSS + '<table>' + head(H) + ROWS.map((r, i) => `<tr class="${i === 0 ? 'abn' : ''}">${tds(r)}</tr>`).join('') + '</table>',
+  '紅字標在每格裡的 span': CSS + '<table>' + head(H) + ROWS.map((r, i) => `<tr>${tds(r, (c) => i === 0 ? `<span class="sp">${c}</span>` : `<span>${c}</span>`)}</tr>`).join('') + '</table>',
+  '表頭與內容分兩張表': CSS + '<div><div><table>' + head(H) + '</table></div><div><table>' + ROWS.map((r, i) => `<tr class="${i === 0 ? 'abn' : ''}">${tds(r)}</tr>`).join('') + '</table></div></div>',
+  '欄位換順序、表頭多空白': (() => { const o = [0, 7, 2, 3, 5, 4, 1, 6, 8]; return CSS + '<table>' + head(o.map((i) => ' ' + H[i].replace('檢驗', '檢 驗') + ' ')) + ROWS.map((r, i) => `<tr class="${i === 0 ? 'abn' : ''}">${tds(o.map((k) => r[k]))}</tr>`).join('') + '</table>'; })(),
+  '藍色連結不算紅字': CSS + '<table>' + head(H) + ROWS.map((r) => `<tr>${tds(r, (c) => `<a href="#">${c}</a>`)}</tr>`).join('') + '</table>',
+};
+const log = [];
+let fail = 0;
+const ok = (cond, msg) => { if (!cond) fail++; log.push((cond ? 'ok   ' : 'FAIL ') + msg); };
+(async () => {
+  const dict = await (await fetch('../extension/data/labs.json')).json();
+  for (const [name, html] of Object.entries(cases)) {
+    const f = document.createElement('iframe');
+    f.style.cssText = 'position:absolute;left:-9999px;width:1200px;height:600px';
+    document.body.append(f);
+    f.contentDocument.open(); f.contentDocument.write('<!doctype html><meta charset=utf-8>' + html); f.contentDocument.close();
+    const labs = SeeUrMeds.readLabs(f.contentDocument);
+    const noRed = name.includes('藍色');
+    ok(labs && labs.length === 4, `${name}:讀到 4 筆(實得 ${labs ? labs.length : 'null'})`);
+    if (!labs || labs.length !== 4) continue;
+    const hdl = labs.find((l) => l.item === 'HDL-C'), tg = labs.find((l) => l.item === 'Triglyceride');
+    ok(hdl && hdl.date === '115/05/11' && hdl.result === '35 mg/dl' && hdl.source === '示範診所', `${name}:欄位對得上(${hdl && [hdl.date, hdl.result, hdl.source].join('|')})`);
+    ok(hdl.marked === !noRed, `${name}:HDL 列紅字=${hdl.marked}`);
+    ok(labs.filter((l) => l.marked).length === (noRed ? 0 : 1), `${name}:只有該列算紅字`);
+    const pts = {};
+    for (const c of SeeUrMeds.groupLabs(labs, dict)) for (const g of c.items) pts[g.points[0].item] = g.points[0].flag;
+    ok(pts['HDL-C'] === (noRed ? '' : 'A'), `${name}:HDL 標 ${JSON.stringify(pts['HDL-C'])}`);
+    ok(pts['Triglyceride'] === 'H', `${name}:TG 287 標 ↑`);
+    ok(pts['HbA1c'] === '' && pts['Creatinine(B)'] === '', `${name}:正常值不變色`);
+  }
+  // 只有表頭、沒有資料列
+  const f = document.createElement('iframe'); document.body.append(f);
+  f.contentDocument.open(); f.contentDocument.write('<table>' + head(H) + '</table>'); f.contentDocument.close();
+  const empty = SeeUrMeds.readLabs(f.contentDocument);
+  ok(Array.isArray(empty) && empty.length === 0, '只有表頭:回空陣列不出錯');
+  ok(SeeUrMeds.readLabs(document) === null, '沒有檢驗表格:回 null');
+  document.getElementById('out').textContent = log.join('\n') + `\n\nRESULT ${fail ? fail + ' FAILED' : 'ALL PASS'} (${log.length})`;
+})().catch((e) => { document.getElementById('out').textContent = 'ERROR ' + e.stack; });
+</script>
