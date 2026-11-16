@@ -29,3 +29,23 @@ h2 .icd { font-weight:600; color:var(--accent); font-family:ui-monospace,Menlo,C
 .tag { display:inline-block; margin-top:4px; padding:0 6px; border-radius:4px; border:1px solid var(--line); font-size:12px; color:var(--sub); }
 .nomatch { color:var(--warn); }
 footer { padding:12px; color:var(--sub); font-size:12px; border-top:1px solid var(--line); }
+.flabs, body.labs .fmeds { display:none; } body.labs .flabs { display:inline; }
+:root { --hi:#c62828; --lo:#1558b0; } @media (prefers-color-scheme: dark) { :root { --hi:#ff8a80; --lo:#82b1ff; } }
+.lab { background:var(--card); border:1px solid var(--line); border-radius:8px; margin-bottom:6px; }
+.lab summary { display:grid; grid-template-columns:1fr 84px auto; gap:2px 8px; align-items:center; padding:7px 10px; cursor:pointer; list-style:none; }
+.lab summary::-webkit-details-marker { display:none; }
+.lname { font-weight:600; word-break:break-word; } .lname.raw { font-weight:400; }
+.lspark { height:26px; }
+.lval { font-weight:600; text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; } .lval small { font-weight:400; color:var(--sub); }
+.ldate { grid-column:1 / -1; color:var(--sub); font-size:12px; }
+.H { color:var(--hi); } .L { color:var(--lo); }
+.spark, .chart { display:block; width:100%; } .spark { height:26px; }
+.line { fill:none; stroke:var(--accent); stroke-width:1.5; } .band { fill:var(--accent); opacity:.12; }
+.dot { fill:var(--accent); } .dot.H { fill:var(--hi); } .dot.L { fill:var(--lo); }
+.axis { font-size:9px; fill:var(--sub); }
+.chart { padding:0 8px; }
+.hist { width:100%; border-collapse:collapse; font-size:13px; }
+.hist td { padding:4px 10px; border-top:1px solid var(--line); vertical-align:top; word-break:break-word; }
+.hist td:first-child { white-space:nowrap; color:var(--sub); } .hist .v { font-weight:600; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.hist tr.H .v { color:var(--hi); } .hist tr.L .v { color:var(--lo); }
+.cat { margin-top:14px; } .cat > summary { cursor:pointer; color:var(--sub); padding:6px 0; }

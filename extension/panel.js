@@ -1,11 +1,13 @@
 (function () {
   'use strict';
-  const { groupMeds, lookup } = self.SeeUrMeds;
+  const { groupMeds, lookup, groupLabs } = self.SeeUrMeds;
   const IMG = 'https://mcp.fda.gov.tw/insert/shapeImg/';
   const $ = (id) => document.getElementById(id);
-  let dataPromise = null;
+  let dataPromise = null, labDictPromise = null;
 
   const loadData = () => (dataPromise ||= fetch(chrome.runtime.getURL('data/drugs.json')).then((r) => r.json()));
+
+  const loadLabDict = () => (labDictPromise ||= fetch(chrome.runtime.getURL('data/labs.json')).then((r) => r.json()));
 
   function el(tag, cls, text) {
     const e = document.createElement(tag);
@@ -56,6 +58,106 @@
     return card;
   }
 
+  // ───────── 檢驗 ─────────
+  const SVG = 'http://www.w3.org/2000/svg';
+  function svg(tag, attrs, text) {
+    const e = document.createElementNS(SVG, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (text) e.textContent = text;
+    return e;
+  }
+  const dayOf = (t) => Date.UTC(Math.floor(t / 10000), Math.floor(t / 100) % 100 - 1, t % 100) / 864e5;
+  const fmt = (n) => String(Math.round(n * 100) / 100);
+
+  // 趨勢圖:x 依日期、y 依數值;有參考範圍就畫底色帶。big=false 是列上的小圖
+  function chart(points, big) {
+    const pts = points.filter((p) => p.plot).slice().reverse();          // 舊到新
+    const W = big ? 320 : 84, H = big ? 130 : 26, L = big ? 34 : 3, R = big ? 10 : 3, T = big ? 10 : 3, B = big ? 22 : 3;
+    const root = svg('svg', { viewBox: `0 0 ${W} ${H}`, class: big ? 'chart' : 'spark', role: 'img' });
+    const range = pts[pts.length - 1].range;
+    let lo = Math.min(...pts.map((p) => p.num)), hi = Math.max(...pts.map((p) => p.num));
+    if (big && range) { if (range.lo !== null) lo = Math.min(lo, range.lo); if (range.hi !== null) hi = Math.max(hi, range.hi); }
+    if (hi === lo) { hi += 1; lo -= 1; }
+    const lo0 = lo, hi0 = hi, pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
+    const x0 = dayOf(pts[0].t), x1 = dayOf(pts[pts.length - 1].t);
+    const X = (p) => L + (x1 === x0 ? 0.5 : (dayOf(p.t) - x0) / (x1 - x0)) * (W - L - R);
+    const Y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+    if (big && range) {
+      const top = range.hi !== null ? Y(range.hi) : T, bottom = range.lo !== null ? Y(range.lo) : H - B;
+      root.append(svg('rect', { x: L, y: top, width: W - L - R, height: Math.max(0, bottom - top), class: 'band' }));
+    }
+    if (big) {
+      root.append(svg('text', { x: L - 4, y: Y(hi0) + 3, class: 'axis', 'text-anchor': 'end' }, fmt(hi0)));
+      root.append(svg('text', { x: L - 4, y: Y(lo0) + 3, class: 'axis', 'text-anchor': 'end' }, fmt(lo0)));
+      root.append(svg('text', { x: L, y: H - 6, class: 'axis' }, pts[0].date));
+      if (pts.length > 1) root.append(svg('text', { x: W - R, y: H - 6, class: 'axis', 'text-anchor': 'end' }, pts[pts.length - 1].date));
+    }
+    root.append(svg('polyline', { points: pts.map((p) => X(p).toFixed(1) + ',' + Y(p.num).toFixed(1)).join(' '), class: 'line' }));
+    pts.forEach((p, i) => {
+      if (!big && i < pts.length - 1) return;
+      const dot = svg('circle', { cx: X(p).toFixed(1), cy: Y(p.num).toFixed(1), r: big ? 3 : 2.2, class: 'dot ' + p.flag });
+      dot.append(svg('title', {}, `${p.date}　${p.text} ${p.unit}　${p.source}`));
+      root.append(dot);
+    });
+    return root;
+  }
+
+  // 參考值:讀得懂就寫成「70–100」「≤130」,讀不懂照原文
+  const refText = (p) => (!p.range ? p.ref : p.range.lo !== null && p.range.hi !== null ? `${p.range.lo}–${p.range.hi}`
+    : p.range.hi !== null ? '≤' + p.range.hi : '≥' + p.range.lo);
+  const ARROW = { H: ' ↑', L: ' ↓' };
+  const short = (s, n) => (s.length > n ? s.slice(0, n) + '…' : s);
+
+  function labRow(g) {
+    const box = el('details', 'lab');
+    const sum = el('summary');
+    const p0 = g.points[0], n = g.points.filter((p) => p.plot).length;
+    sum.append(el('span', 'lname' + (g.matched ? '' : ' raw'), g.name));
+    const mid = el('span', 'lspark');
+    if (n >= 2) mid.append(chart(g.points, false));
+    sum.append(mid);
+    const val = el('span', 'lval ' + p0.flag, short(p0.text, 14) + (ARROW[p0.flag] || ''));
+    if (p0.unit) val.append(el('small', '', ' ' + p0.unit));
+    sum.append(val, el('span', 'ldate', p0.date + (g.points.length > 1 ? `・共 ${g.points.length} 次` : '')));
+    box.append(sum);
+    box.addEventListener('toggle', () => {
+      if (!box.open || box.dataset.done) return;
+      box.dataset.done = '1';
+      if (n >= 2) box.append(chart(g.points, true));
+      const table = el('table', 'hist');
+      for (const p of g.points) {
+        const tr = el('tr', p.flag);
+        tr.append(el('td', '', p.date), el('td', 'v', p.text + (ARROW[p.flag] || '') + (p.unit ? ' ' + p.unit : '')),
+          el('td', 'sub', [p.ref && '參考 ' + refText(p), p.source, p.item !== g.name && '原名：' + p.item,
+            p.num !== null && !p.plot && '單位不同，未畫進圖'].filter(Boolean).join('・')));
+        table.append(tr);
+      }
+      box.append(table);
+    });
+    return box;
+  }
+
+  async function renderLabs(labs) {
+    const list = $('list'), status = $('status');
+    if (!labs.length) { list.replaceChildren(); status.textContent = '檢驗表格是空的。'; return; }
+    const dict = await loadLabDict();
+    $('built').textContent = '檢驗名稱字典 ' + dict.built + '。';
+    const frag = document.createDocumentFragment();
+    let kinds = 0, trend = 0;
+    for (const c of groupLabs(labs, dict)) {
+      const fold = c.cat === '影像與篩檢';
+      const wrap = fold ? el('details', 'cat') : frag;
+      if (fold) { wrap.append(el('summary', '', `${c.cat}（${c.items.length} 項，不是檢驗數值，點開看）`)); frag.append(wrap); }
+      else frag.append(el('h2', '', c.cat));
+      for (const g of c.items) {
+        kinds++; if (g.points.filter((p) => p.plot).length >= 2) trend++;
+        wrap.append(labRow(g));
+      }
+    }
+    list.replaceChildren(frag);
+    status.textContent = `畫面上 ${labs.length} 筆，整理成 ${kinds} 種，${trend} 種有兩次以上可看趨勢。↑↓ 依各院所自己的參考值判斷；單位不同不換算。只讀目前這一頁顯示的列。`;
+  }
+
   async function activeTabId() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     return tab ? tab.id : null;
@@ -63,15 +165,17 @@
 
   async function refresh() {
     const list = $('list'), status = $('status');
-    let meds = null;
+    let meds = null, labs = null;
     try {
       const id = await activeTabId();
       const res = id !== null ? await chrome.tabs.sendMessage(id, { type: 'seeurmeds:read' }) : null;
-      meds = res && res.meds;
+      meds = res && res.meds; labs = res && res.labs;
     } catch (e) { meds = null; }
+    document.body.classList.toggle('labs', !meds && !!labs);
+    if (!meds && labs) return renderLabs(labs);
     if (!meds) {
       list.replaceChildren();
-      status.textContent = '這個分頁找不到用藥表格。請開啟健保雲端查詢系統的「雲端藥歷」，查到病人後再按「重新讀取」。剛安裝完要先重新整理雲端藥歷那一頁。';
+      status.textContent = '這個分頁找不到用藥或檢驗表格。請開啟健保雲端查詢系統的「雲端藥歷」或「檢查與檢驗 → 檢查檢驗結果」，查到病人後再按「重新讀取」。剛安裝或更新後要先重新整理健保雲端那一頁。';
       return;
     }
     if (!meds.length) { list.replaceChildren(); status.textContent = '用藥表格是空的。'; return; }

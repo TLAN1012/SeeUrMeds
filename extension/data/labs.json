@@ -1,0 +1,771 @@
+{
+"skip": "對照|^ptt? c$|consistency|^[a-z]\\d{1,3} |wbc[- ]?d\\s?c\\b|分類計數|other cell|pleural|effusion|\\(fluid\\)|全套|cbc-?i\\b|套組|control|mnaptt|mean normal|data/mean|genotyp|基因|minimal inhibition|\\((csf|pl|pleural|ascites)\\)|\\(\\s*other\\s*\\)|/psa",
+"nonlab": "檢查[（(]包括|\\bview\\b|k\\.u\\.b|造影|超音波|心電圖|mapping|篩檢|抹片|^抽菸|^戒菸|^家族病史|^伴隨疾病|^結果$|^尿液檢查$|^尿沉渣$",
+"built": "2026-11-16",
+"cats": [
+"血糖",
+"血脂",
+"腎功能",
+"肝功能",
+"電解質",
+"血液常規",
+"甲狀腺",
+"肝炎標記",
+"發炎與感染",
+"心臟",
+"腫瘤標記",
+"凝血",
+"貧血與營養",
+"尿液",
+"糞便",
+"生理量測",
+"其他",
+"未歸類",
+"影像與篩檢"
+],
+"items": [
+{
+"key": "HBA1C",
+"name": "HbA1c 醣化血色素",
+"cat": "血糖",
+"re": "hb\\s*-?\\s*a1c|\\ba1c\\b|[醣糖]化血[色紅]素"
+},
+{
+"key": "GLU_POC",
+"name": "指尖血糖",
+"cat": "血糖",
+"re": "one\\s*touch|finger\\s*-?su[gr]|finger\\s*stick|指尖|扎針|血糖機"
+},
+{
+"key": "GLU_AC",
+"name": "飯前血糖",
+"cat": "血糖",
+"re": "(飯前|空腹).*(血糖|葡萄糖|glucose|sugar)|(血糖|葡萄糖).*(飯前|空腹)|(glucose|\\bglu|sugar|血糖).*\\ba\\.?c\\b|ante\\s*cibum|\\bac\\s*(sugar|glucose)|fasting"
+},
+{
+"key": "GLU_PC",
+"name": "飯後血糖",
+"cat": "血糖",
+"re": "(飯後|餐後).*(血糖|葡萄糖|glucose|sugar)|(血糖|葡萄糖).*(飯後|餐後)|(glucose|\\bglu|sugar|血糖).*(\\bp\\.?c\\b|2\\s*hr)|post\\s*cibum|\\bpc\\s*(sugar|glucose)|postprandial"
+},
+{
+"key": "CHOL_HDL",
+"name": "總膽固醇/HDL 比值",
+"cat": "血脂",
+"re": "/\\s*hdl|血管硬化|動脈硬化指數|risk\\s*factor"
+},
+{
+"key": "LDL",
+"name": "LDL 低密度膽固醇",
+"cat": "血脂",
+"re": "ldl|l\\.d\\.l|低密度"
+},
+{
+"key": "HDL",
+"name": "HDL 高密度膽固醇",
+"cat": "血脂",
+"re": "hdl|h\\.d\\.l|高密度"
+},
+{
+"key": "TG",
+"name": "TG 三酸甘油酯",
+"cat": "血脂",
+"re": "\\btg\\b|triglycerid|三酸甘油"
+},
+{
+"key": "TC",
+"name": "總膽固醇",
+"cat": "血脂",
+"re": "膽固醇|cholester[o0][l1]|\\bt\\.?-?chol?\\b|\\bchol?\\b|\\btc\\b"
+},
+{
+"key": "EGFR",
+"name": "eGFR 腎絲球過濾率",
+"cat": "腎功能",
+"re": "e-?gfr|腎絲球過濾|\\bgfr\\b|ckd-?epi|mdrd"
+},
+{
+"key": "UACR",
+"name": "尿白蛋白/肌酸酐比 UACR",
+"cat": "腎功能",
+"re": "\\bu?-?acr\\b|ma/u-?cre|albumin\\s*/\\s*(u-?)?cre|白蛋白.*肌酸?酐.*比"
+},
+{
+"key": "UPCR",
+"name": "尿蛋白/肌酸酐比 UPCR",
+"cat": "腎功能",
+"re": "\\bupcr\\b|\\bu-pcr\\b|protein\\s*/\\s*(u-?)?cre|\\btp\\s*/\\s*cre|蛋白.*肌酸?酐.*比"
+},
+{
+"key": "U_MALB",
+"name": "尿微白蛋白",
+"cat": "腎功能",
+"re": "micro\\s*-?albumin|微量?白蛋白|\\bmalb\\b"
+},
+{
+"key": "U_MALB",
+"name": "尿微白蛋白",
+"cat": "腎功能",
+"re": "albumin|白蛋白",
+"ctx": "u"
+},
+{
+"key": "U_CRE",
+"name": "尿肌酸酐",
+"cat": "腎功能",
+"re": "creatinine|\\bcrea?\\b|肌酸酐|肌酐",
+"ctx": "u"
+},
+{
+"key": "CRE",
+"name": "Creatinine 肌酸酐",
+"cat": "腎功能",
+"re": "creatinine|\\bcrea?\\b|^crtn$|肌酸酐|肌酐",
+"ctx": "b?"
+},
+{
+"key": "BUN",
+"name": "BUN 尿素氮",
+"cat": "腎功能",
+"re": "\\bbun\\b|^un$|尿素氮|urea\\s*nitrogen"
+},
+{
+"key": "UA",
+"name": "尿酸",
+"cat": "腎功能",
+"re": "尿酸|uric\\s*acid|^ua\\b"
+},
+{
+"key": "ALT",
+"name": "ALT (GPT)",
+"cat": "肝功能",
+"re": "\\balt\\b|gpt|g\\.p\\.t|丙酮"
+},
+{
+"key": "AST",
+"name": "AST (GOT)",
+"cat": "肝功能",
+"re": "\\bast\\b|got\\b|g\\.o\\.t|苯醋酸|草醋酸"
+},
+{
+"key": "GGT",
+"name": "γ-GT",
+"cat": "肝功能",
+"re": "\\br-?gt\\b|γ-?gt|\\bggt\\b|gamma.?g|麩胺轉酸|麩胺醯"
+},
+{
+"key": "ALP",
+"name": "ALP 鹼性磷酸酶",
+"cat": "肝功能",
+"re": "alk\\.?-?\\s*p|\\balp\\b|鹼性磷[酸酯]"
+},
+{
+"key": "DBIL",
+"name": "直接膽紅素",
+"cat": "肝功能",
+"re": "直接膽紅素|direct\\s*bil|bil\\w*\\s*[-(]?\\s*d\\b|\\bd\\.?-?bil"
+},
+{
+"key": "TBIL",
+"name": "總膽紅素",
+"cat": "肝功能",
+"re": "總膽紅素|膽紅素總量|total\\s*bil|bil\\w*\\s*total|bil\\w*\\s*[-(]?\\s*t\\b|\\bt\\.?-?bil"
+},
+{
+"key": "TBIL",
+"name": "總膽紅素",
+"cat": "肝功能",
+"re": "^bilirubin$|^膽紅素$",
+"ctx": "b"
+},
+{
+"key": "ALB",
+"name": "Albumin 白蛋白",
+"cat": "肝功能",
+"re": "albumin|^alb\\b|(?<!卵)白蛋白",
+"ctx": "b?"
+},
+{
+"key": "TP",
+"name": "總蛋白",
+"cat": "肝功能",
+"re": "總蛋白|全蛋白|total\\s*protein|protein,?\\s*total|^t-protein|^tp\\b",
+"ctx": "b?"
+},
+{
+"key": "CA125",
+"name": "CA-125",
+"cat": "腫瘤標記",
+"re": "ca\\s*-?\\s*125"
+},
+{
+"key": "CA199",
+"name": "CA 19-9",
+"cat": "腫瘤標記",
+"re": "ca\\s*-?\\s*19-?9"
+},
+{
+"key": "CA153",
+"name": "CA 15-3",
+"cat": "腫瘤標記",
+"re": "ca\\s*-?\\s*15-?3"
+},
+{
+"key": "AFP",
+"name": "AFP 甲型胎兒蛋白",
+"cat": "腫瘤標記",
+"re": "\\bafp\\b|胎兒蛋白|fetoprotein"
+},
+{
+"key": "CEA",
+"name": "CEA",
+"cat": "腫瘤標記",
+"re": "\\bcea\\b|癌胚"
+},
+{
+"key": "FPSA",
+"name": "Free PSA",
+"cat": "腫瘤標記",
+"re": "free\\s*-?psa|游離.*攝護腺"
+},
+{
+"key": "PSA",
+"name": "PSA",
+"cat": "腫瘤標記",
+"re": "\\bpsa\\b|攝護腺特異"
+},
+{
+"key": "TROP",
+"name": "Troponin",
+"cat": "心臟",
+"re": "troponin|旋轉蛋白|肌鈣蛋白"
+},
+{
+"key": "CKMB",
+"name": "CK-MB",
+"cat": "心臟",
+"re": "ck-?mb|mb同功|同功"
+},
+{
+"key": "CK",
+"name": "CK (CPK)",
+"cat": "心臟",
+"re": "\\bcp?k\\b|肌酸磷[化酸]|creatine\\s*kinase"
+},
+{
+"key": "BNP",
+"name": "BNP / NT-proBNP",
+"cat": "心臟",
+"re": "bnp|利[鈉納]"
+},
+{
+"key": "NA",
+"name": "Na 鈉",
+"cat": "電解質",
+"re": "^na\\b|鈉|sodium"
+},
+{
+"key": "K",
+"name": "K 鉀",
+"cat": "電解質",
+"re": "^k\\b(?!他)|鉀|potassium"
+},
+{
+"key": "CA",
+"name": "Ca 鈣",
+"cat": "電解質",
+"re": "^ca\\b|(?<!降)鈣|calcium"
+},
+{
+"key": "P",
+"name": "P 磷",
+"cat": "電解質",
+"re": "^p\\b(?![.-])|inorganic p|^磷|phosphorus|無機磷"
+},
+{
+"key": "MG",
+"name": "Mg 鎂",
+"cat": "電解質",
+"re": "^mg\\b|鎂|magnesium"
+},
+{
+"key": "CL",
+"name": "Cl 氯",
+"cat": "電解質",
+"re": "^cl\\b|^氯|chloride"
+},
+{
+"key": "U_LEU",
+"name": "尿白血球酯酶",
+"cat": "尿液",
+"re": "leu[ck]ocytes?\\s*[er]sterase|leu\\.?\\s*esterase|wbc\\s*esterase|白血球[酯脂]|^leu\\b"
+},
+{
+"key": "U_WBC",
+"name": "尿沉渣 白血球",
+"cat": "尿液",
+"re": "pus\\s*cell"
+},
+{
+"key": "U_WBC",
+"name": "尿沉渣 白血球",
+"cat": "尿液",
+"re": "wbc|w\\.b\\.c|白血球(?!酯)|pus\\s*cell",
+"ctx": "u"
+},
+{
+"key": "U_RBC",
+"name": "尿沉渣 紅血球",
+"cat": "尿液",
+"re": "rbc|r\\.b\\.c|紅血球",
+"ctx": "u"
+},
+{
+"key": "MCHC",
+"name": "MCHC",
+"cat": "血液常規",
+"re": "mchc|色素濃度|血紅素濃度"
+},
+{
+"key": "MCH",
+"name": "MCH",
+"cat": "血液常規",
+"re": "\\bmch\\b|平均.*血球.*(色素|血紅素)"
+},
+{
+"key": "MCV",
+"name": "MCV",
+"cat": "血液常規",
+"re": "\\bmcv\\b|血球容積(?!比)"
+},
+{
+"key": "RDWSD",
+"name": "RDW-SD",
+"cat": "血液常規",
+"re": "rdw\\s*-?\\s*sd|分[佈布].*標準差"
+},
+{
+"key": "RDW",
+"name": "RDW-CV",
+"cat": "血液常規",
+"re": "rdw|紅血球分[佈布]"
+},
+{
+"key": "MPV",
+"name": "MPV",
+"cat": "血液常規",
+"re": "\\bmpv\\b"
+},
+{
+"key": "HCT",
+"name": "Hct 血球比容",
+"cat": "血液常規",
+"re": "\\bhct\\b|hematocrit|血球?比容|容積比"
+},
+{
+"key": "HB",
+"name": "Hb 血色素",
+"cat": "血液常規",
+"re": "h[ae]moglobin(?!\\s*-?\\s*[a-z]\\b)|\\bhgb\\b|\\bhb\\b|血色素|血紅素"
+},
+{
+"key": "PLT",
+"name": "Platelet 血小板",
+"cat": "血液常規",
+"re": "platelet|\\bplt\\b|血小板"
+},
+{
+"key": "BAND",
+"name": "Band 帶狀嗜中性球",
+"cat": "血液常規",
+"re": "\\bband"
+},
+{
+"key": "ATYLYM",
+"name": "Atypical lymphocyte 非典型淋巴球",
+"cat": "血液常規",
+"re": "atypical\\s*lym|aty-?lym|非典型淋巴"
+},
+{
+"key": "NEUT",
+"name": "Neutrophil 嗜中性球",
+"cat": "血液常規",
+"re": "neut|\\bseg|\\bneu%|嗜中性"
+},
+{
+"key": "LYM",
+"name": "Lymphocyte 淋巴球",
+"cat": "血液常規",
+"re": "\\blym|淋巴"
+},
+{
+"key": "MONO",
+"name": "Monocyte 單核球",
+"cat": "血液常規",
+"re": "\\bmono|單核"
+},
+{
+"key": "EOS",
+"name": "Eosinophil 嗜酸性球",
+"cat": "血液常規",
+"re": "\\beos|嗜酸|嗜伊紅"
+},
+{
+"key": "BASO",
+"name": "Basophil 嗜鹼性球",
+"cat": "血液常規",
+"re": "\\bbaso|嗜鹼"
+},
+{
+"key": "WBC",
+"name": "WBC 白血球",
+"cat": "血液常規",
+"re": "\\bwbc\\b|^w\\.b\\.c|^白血球|leu[ck]ocyte\\s*count",
+"ctx": "b?"
+},
+{
+"key": "RBC",
+"name": "RBC 紅血球",
+"cat": "血液常規",
+"re": "\\brbc\\b|^r\\.b\\.c|^紅血球",
+"ctx": "b?"
+},
+{
+"key": "TSH",
+"name": "TSH",
+"cat": "甲狀腺",
+"re": "\\btsh\\b|甲狀腺刺激素|促甲狀腺"
+},
+{
+"key": "FT4",
+"name": "Free T4",
+"cat": "甲狀腺",
+"re": "free\\s*-?\\s*t4|\\bft4\\b|游離甲狀腺素|游離四碘"
+},
+{
+"key": "FT3",
+"name": "Free T3",
+"cat": "甲狀腺",
+"re": "free\\s*-?\\s*t3|\\bft3\\b|游離三碘"
+},
+{
+"key": "T4",
+"name": "T4",
+"cat": "甲狀腺",
+"re": "^t4\\b|^四碘甲狀腺素|^甲狀腺素"
+},
+{
+"key": "T3",
+"name": "T3",
+"cat": "甲狀腺",
+"re": "^t3\\b|^三碘甲狀腺"
+},
+{
+"key": "HBSAG",
+"name": "HBsAg B 肝表面抗原",
+"cat": "肝炎標記",
+"re": "hbs\\s*-?ag|b型?肝炎?表面抗原"
+},
+{
+"key": "ANTIHBS",
+"name": "Anti-HBs B 肝表面抗體",
+"cat": "肝炎標記",
+"re": "anti-?\\s*hbs|hbs\\s*-?ab|b型?肝炎?表面抗體"
+},
+{
+"key": "HBEAG",
+"name": "HBeAg B 肝 e 抗原",
+"cat": "肝炎標記",
+"re": "hbe\\s*-?ag|b型?肝炎?e抗原"
+},
+{
+"key": "HCVRNA",
+"name": "HCV RNA",
+"cat": "肝炎標記",
+"re": "hcv\\s*-?rna"
+},
+{
+"key": "ANTIHCV",
+"name": "Anti-HCV C 肝抗體",
+"cat": "肝炎標記",
+"re": "anti-?\\s*hcv|hcv\\s*-?ab|c型?肝炎?(病毒)?抗體"
+},
+{
+"key": "HBVDNA",
+"name": "HBV DNA",
+"cat": "肝炎標記",
+"re": "hbv\\s*-?dna"
+},
+{
+"key": "CRP",
+"name": "CRP",
+"cat": "發炎與感染",
+"re": "\\b(hs-?)?crp\\b|c反應"
+},
+{
+"key": "ESR",
+"name": "ESR",
+"cat": "發炎與感染",
+"re": "\\besr\\b|沉降速?率"
+},
+{
+"key": "FLUA",
+"name": "流感 A 型抗原",
+"cat": "發炎與感染",
+"re": "流行?性?感冒?a型|influenza\\s*a|flu\\s*a\\b"
+},
+{
+"key": "FLUB",
+"name": "流感 B 型抗原",
+"cat": "發炎與感染",
+"re": "流行?性?感冒?b型|influenza\\s*b|flu\\s*b\\b"
+},
+{
+"key": "COVIDAG",
+"name": "新冠病毒抗原",
+"cat": "發炎與感染",
+"re": "新型?冠狀|covid|sars-cov"
+},
+{
+"key": "DDIMER",
+"name": "D-dimer",
+"cat": "凝血",
+"re": "d-?\\s*d?\\s*dimer|雙合體"
+},
+{
+"key": "INR",
+"name": "INR",
+"cat": "凝血",
+"re": "\\binr"
+},
+{
+"key": "APTT",
+"name": "APTT",
+"cat": "凝血",
+"re": "aptt|部分凝血活"
+},
+{
+"key": "PT",
+"name": "PT 凝血酶原時間",
+"cat": "凝血",
+"re": "^p\\.?t\\b|pro\\. time|prothrombin|凝血.原時間"
+},
+{
+"key": "FERRITIN",
+"name": "Ferritin 鐵蛋白",
+"cat": "貧血與營養",
+"re": "ferritin|(?<!運)鐵蛋白"
+},
+{
+"key": "TIBC",
+"name": "TIBC",
+"cat": "貧血與營養",
+"re": "tibc|總鐵結合"
+},
+{
+"key": "FE",
+"name": "Fe 血清鐵",
+"cat": "貧血與營養",
+"re": "^fe\\b|^iron|血清鐵|^鐵$"
+},
+{
+"key": "B12",
+"name": "Vitamin B12",
+"cat": "貧血與營養",
+"re": "b12"
+},
+{
+"key": "FOLATE",
+"name": "Folate 葉酸",
+"cat": "貧血與營養",
+"re": "folate|folic|葉酸"
+},
+{
+"key": "VITD",
+"name": "Vitamin D",
+"cat": "貧血與營養",
+"re": "vit\\w*\\.?\\s*d|維生素d|25-?oh"
+},
+{
+"key": "NH3",
+"name": "Ammonia 血氨",
+"cat": "其他",
+"re": "ammonia|血氨"
+},
+{
+"key": "LIPASE",
+"name": "Lipase 解脂酶",
+"cat": "其他",
+"re": "lipase|解脂"
+},
+{
+"key": "AMYLASE",
+"name": "Amylase 澱粉酶",
+"cat": "其他",
+"re": "amylase|澱粉"
+},
+{
+"key": "LDH",
+"name": "LDH",
+"cat": "其他",
+"re": "\\bldh\\b|乳酸脫氫"
+},
+{
+"key": "FOBT",
+"name": "糞便潛血",
+"cat": "糞便",
+"re": "糞便潛血|i?fobt?\\b|stool\\s*o"
+},
+{
+"key": "U_SG",
+"name": "尿比重",
+"cat": "尿液",
+"re": "比重|sp\\.?\\s*g|specific\\s*gravity|^s\\.?g\\b"
+},
+{
+"key": "U_PH",
+"name": "尿 pH",
+"cat": "尿液",
+"re": "^ph\\b|酸鹼",
+"ctx": "u?"
+},
+{
+"key": "U_NIT",
+"name": "尿亞硝酸鹽",
+"cat": "尿液",
+"re": "nitrite|亞硝酸|^nit\\b"
+},
+{
+"key": "U_URO",
+"name": "尿膽素原",
+"cat": "尿液",
+"re": "尿膽[元原素]|urobilinogen|^uro\\b"
+},
+{
+"key": "U_BIL",
+"name": "尿膽紅素",
+"cat": "尿液",
+"re": "bilirubin|膽紅素|^bil\\b",
+"ctx": "u?"
+},
+{
+"key": "U_KET",
+"name": "尿酮體",
+"cat": "尿液",
+"re": "酮體|ketone|^ket\\b"
+},
+{
+"key": "U_OB",
+"name": "尿潛血",
+"cat": "尿液",
+"re": "潛血|occult\\s*blood|^ob\\b|^blood$"
+},
+{
+"key": "U_TP",
+"name": "尿總蛋白",
+"cat": "尿液",
+"re": "總蛋白|total\\s*protein|\\btp\\b",
+"ctx": "u"
+},
+{
+"key": "U_PRO",
+"name": "尿蛋白",
+"cat": "尿液",
+"re": "^(t-)?protein\\b|^pro\\b|^蛋白$|^蛋白質|^尿.{0,2}蛋白|urine\\s*-?protein|^u-protein|protine",
+"ctx": "u?"
+},
+{
+"key": "U_GLU",
+"name": "尿糖",
+"cat": "尿液",
+"re": "glucose|sugar|^glu\\b|糖",
+"ctx": "u"
+},
+{
+"key": "U_GLU",
+"name": "尿糖",
+"cat": "尿液",
+"re": "^糖$|^sugar$|urine\\s*sugar|(glucose|sugar).*定性",
+"ctx": "u?"
+},
+{
+"key": "U_COLOR",
+"name": "尿液顏色",
+"cat": "尿液",
+"re": "顏色|(?<!doppler )colou?r"
+},
+{
+"key": "U_TURB",
+"name": "尿液混濁度",
+"cat": "尿液",
+"re": "混濁|appear|turbid|clarity|外觀"
+},
+{
+"key": "U_EPI",
+"name": "尿沉渣 上皮細胞",
+"cat": "尿液",
+"re": "epith|上皮|\\bepi?\\.?\\s*cell|^sqep"
+},
+{
+"key": "U_CAST",
+"name": "尿沉渣 圓柱體",
+"cat": "尿液",
+"re": "^casts?\\b|圓柱"
+},
+{
+"key": "U_CRYS",
+"name": "尿沉渣 結晶",
+"cat": "尿液",
+"re": "^crystals?\\b|結晶"
+},
+{
+"key": "U_BACT",
+"name": "尿沉渣 細菌",
+"cat": "尿液",
+"re": "^bacteria\\b|^細菌$"
+},
+{
+"key": "GLU",
+"name": "血糖(未註明飯前飯後)",
+"cat": "血糖",
+"re": "^glucose|^glu\\b|^血糖|葡萄",
+"ctx": "b?"
+},
+{
+"key": "SBP",
+"name": "收縮壓",
+"cat": "生理量測",
+"re": "收縮壓|\\bsbp\\b"
+},
+{
+"key": "DBP",
+"name": "舒張壓",
+"cat": "生理量測",
+"re": "舒張壓|\\bdbp\\b"
+},
+{
+"key": "BMI",
+"name": "BMI",
+"cat": "生理量測",
+"re": "\\bbmi\\b|身體質量"
+},
+{
+"key": "HEIGHT",
+"name": "身高",
+"cat": "生理量測",
+"re": "^身高"
+},
+{
+"key": "WEIGHT",
+"name": "體重",
+"cat": "生理量測",
+"re": "^體重"
+},
+{
+"key": "WAIST",
+"name": "腰圍",
+"cat": "生理量測",
+"re": "^腰圍"
+}
+]
+}

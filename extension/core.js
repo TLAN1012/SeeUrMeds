@@ -121,7 +121,203 @@
     return o;
   }
 
-  const api = { icdCode, normName, readMeds, groupMeds, lookup, findMedTable };
+  // ───────── 檢驗 ─────────
+  const LAB_COLS = [
+    ['item', '檢驗項目'], ['result', '檢驗結果'], ['date', '檢驗日期'], ['unit', '單位'],
+    ['ref', '參考值'], ['specimen', '檢體'], ['source', '來源'],
+  ];
+
+  function labHeaderMap(cells) {
+    const map = {};
+    cells.forEach((c, i) => {
+      const t = squash(String(c).split('\n')[0]);
+      for (const [key, label] of LAB_COLS) if (!(key in map) && t.includes(label)) map[key] = i;
+    });
+    return ('item' in map && 'result' in map) ? map : null;
+  }
+
+  // 找「檢查檢驗結果」表格(表頭要同時有 檢驗項目、檢驗結果);表頭與內容分兩張 table 的情形同用藥表
+  function findLabTable(doc) {
+    for (const table of doc.querySelectorAll('table')) {
+      const grid = expandTable(table);
+      for (let r = 0; r < grid.length; r++) {
+        const map = labHeaderMap(grid[r]);
+        if (!map) continue;
+        const n = grid[r].length;
+        let rows = grid.slice(r + 1).filter((row) => row.length === n);
+        if (!rows.length) {
+          let box = table.parentElement;
+          for (let i = 0; i < 4 && box && !rows.length; i++, box = box.parentElement) {
+            for (const other of box.querySelectorAll('table')) {
+              if (other === table || table.contains(other) || other.contains(table)) continue;
+              rows = rows.concat(expandTable(other).filter((row) => row.length === n));
+            }
+          }
+        }
+        return { table, map, rows };
+      }
+    }
+    return null;
+  }
+
+  const oneLine = (s) => (s || '').replace(/\s*\n\s*/g, ' ').trim();
+
+  function readLabs(doc) {
+    const found = findLabTable(doc);
+    if (!found) return null;
+    const { map, rows } = found;
+    const get = (row, key) => (key in map && row[map[key]] ? row[map[key]] : '');
+    const labs = [];
+    for (const row of rows) {
+      const item = oneLine(get(row, 'item'));
+      if (!item || squash(item) === '檢驗項目') continue;
+      labs.push({
+        item,
+        result: oneLine(get(row, 'result')),
+        unit: oneLine(get(row, 'unit')),
+        ref: oneLine(get(row, 'ref')),
+        specimen: oneLine(get(row, 'specimen')),
+        date: squash(get(row, 'date')),
+        source: get(row, 'source').split('\n')[0],     // 只留院所名
+      });
+    }
+    return labs;
+  }
+
+  // 項目名稱正規化:全形轉半形、小寫、去開頭的健保醫令碼、空白壓成一格
+  function normLabName(name) {
+    return (name || '').normalize('NFKC').toLowerCase().replace(/^\s*\d{5}[a-z]\d?\s*[-:]?\s*/, '')
+      .replace(/\s+/g, ' ').trim();
+  }
+
+  // 檢體:'u' 尿液、'b' 血液、'' 看不出來。尿素氮、尿酸的「尿」不算
+  function labCtx(lab) {
+    const name = normLabName(lab.item).replace(/尿素氮|尿酸|尿素/g, '');
+    const sp = (lab.specimen || '').toLowerCase();
+    if (/尿|urine/.test(sp) || /尿|urine|urinary|\(u\)|\bu-|sediment/.test(name) || /\/\s*[hl]pf/i.test(lab.unit + ' ' + lab.result)) return 'u';
+    if (/血|serum|plasma/.test(sp) || /血清|serum|gas|vein|\(v\)|arter|靜脈|動脈/.test(name)) return 'b';
+    return '';
+  }
+
+  function compileLabDict(dict) {
+    if (!dict._rules) {
+      Object.defineProperty(dict, '_rules', { value: dict.items.map((it) => ({ ...it, rx: new RegExp(it.re, 'i') })) });
+    }
+    return dict._rules;
+  }
+
+  // 回傳字典項目;對不到回 null(不猜)
+  function matchLab(dict, lab) {
+    const name = normLabName(lab.item), ctx = labCtx(lab);
+    if (dict.skip && (dict._skip || Object.defineProperty(dict, '_skip', { value: new RegExp(dict.skip, 'i') })._skip).test(name)) return null;
+    for (const r of compileLabDict(dict)) {
+      if (r.ctx === 'u' && ctx !== 'u') continue;
+      if (r.ctx === 'b' && ctx !== 'b') continue;
+      if (r.ctx === 'u?' && ctx === 'b') continue;
+      if (r.ctx === 'b?' && ctx === 'u') continue;
+      if (r.rx.test(name)) return r;
+    }
+    return null;
+  }
+
+  const normUnit = (u) => (u || '').normalize('NFKC').toLowerCase().replace(/[\s^]/g, '').replace(/[μµ]/g, 'u')
+    .replace(/^(-|無|none|na|n\/a)$/, '');
+  const unitCompat = (a, b) => !a || !b || a === b || a.startsWith(b) || b.startsWith(a);
+
+  // 檢驗結果 → 數值與顯示文字。「32.1 g/dL」→ 32.1;「Negative -」→ 文字 Negative;「<0.5」保留比較符號
+  function parseResult(result, unit) {
+    let text = (result || '').trim();
+    if (unit && text.toLowerCase().endsWith(unit.toLowerCase())) text = text.slice(0, text.length - unit.length).trim();
+    text = text.replace(/\s+-$/, '').trim();
+    const m = /^([<>≦≧≤≥]=?)?\s*(-?\d+(?:,\d{3})*(?:\.\d+)?)(?![\d\/:+-])/.exec(text);
+    let num = null, rest = '';
+    if (m) {
+      num = parseFloat(m[2].replace(/,/g, ''));
+      rest = text.slice(m[0].length).trim();
+      if (!unit && rest) { unit = rest; }
+      text = (m[1] || '') + m[2];
+    }
+    return { text, num: m && !m[1] ? num : null, approx: m && m[1] ? num : null, unit: unit || '' };
+  }
+
+  // 參考值 →{lo, hi}。看得懂的格式:[31-36][]、[上限][下限]、<130、>60、3.5~5.0;[0][0]、分男女的不判斷
+  function parseRef(ref) {
+    const t = (ref || '').normalize('NFKC').replace(/\s+/g, '');
+    if (!t || /男|女|[mf]:/i.test(t)) return null;
+    const parts = Array.from(t.matchAll(/\[([^\]]*)\]/g), (m) => m[1]);
+    const num = (s) => (/^-?\d+(\.\d+)?$/.test(s) ? parseFloat(s) : null);
+    const range = (s) => {
+      let m = /^(-?\d+(?:\.\d+)?)[-~~至](-?\d+(?:\.\d+)?)$/.exec(s);
+      if (m) return { lo: parseFloat(m[1]), hi: parseFloat(m[2]) };
+      m = /^[<≦≤]=?(\d+(?:\.\d+)?)$/.exec(s);
+      if (m) return { lo: null, hi: parseFloat(m[1]) };
+      m = /^[>≧≥]=?(\d+(?:\.\d+)?)$/.exec(s);
+      if (m) return { lo: parseFloat(m[1]), hi: null };
+      return null;
+    };
+    let out = null;
+    if (parts.length) {
+      const a = parts[0], b = parts[1] || '';
+      out = range(a) || (b === '' ? null : null);
+      if (!out && num(a) !== null && num(b) !== null) out = { lo: num(b), hi: num(a) };
+      if (!out && num(a) !== null && b === '') out = null;
+    } else out = range(t);
+    if (!out) return null;
+    if ((out.lo || 0) === 0 && (out.hi || 0) === 0) return null;
+    if (out.lo !== null && out.hi !== null && out.lo > out.hi) return null;
+    return out;
+  }
+
+  function labFlag(num, ref) {
+    if (num === null || !ref) return '';
+    if (ref.hi !== null && num > ref.hi) return 'H';
+    if (ref.lo !== null && num < ref.lo) return 'L';
+    return '';
+  }
+
+  // 民國或西元日期 → 可比較的數字(yyyymmdd);看不懂回 0
+  function dateNum(d) {
+    const m = /^(\d{2,4})[\/.-](\d{1,2})[\/.-](\d{1,2})/.exec(d || '');
+    if (!m) return 0;
+    const y = +m[1] < 1911 ? +m[1] + 1911 : +m[1];
+    return y * 10000 + +m[2] * 100 + +m[3];
+  }
+
+  // 同一種檢驗(不分院所、不分寫法)收在一起,新到舊;對不到字典的照原名各自成組放「其他」
+  function groupLabs(labs, dict) {
+    const groups = new Map();
+    for (const lab of labs) {
+      const hit = matchLab(dict, lab);
+      const key = hit ? hit.key : 'raw:' + normLabName(lab.item) + (labCtx(lab) === 'u' ? '|u' : '');
+      if (!groups.has(key)) {
+        const nonlab = !hit && dict.nonlab && new RegExp(dict.nonlab, 'i').test(normLabName(lab.item));
+        groups.set(key, { key, name: hit ? hit.name : lab.item, cat: hit ? hit.cat : nonlab ? '影像與篩檢' : '未歸類', matched: !!hit, points: [], seen: new Set() });
+      }
+      const g = groups.get(key);
+      const r = parseResult(lab.result, lab.unit), ref = parseRef(lab.ref);
+      const sig = [lab.date, lab.source, lab.item, lab.result].join('\u0001');
+      if (g.seen.has(sig)) continue;
+      g.seen.add(sig);
+      g.points.push({
+        date: lab.date, t: dateNum(lab.date), text: r.text, num: r.num, unit: r.unit, ref: lab.ref, range: ref,
+        flag: labFlag(r.num, ref), source: lab.source, item: lab.item,
+      });
+    }
+    const out = dict.cats.map((cat) => ({ cat, items: [] }));
+    for (const g of groups.values()) {
+      g.points.sort((a, b) => b.t - a.t);
+      // 圖只畫單位相同(或沒寫單位)的數值;以最新一筆有單位的為準,不換算
+      const base = normUnit((g.points.find((p) => p.num !== null && normUnit(p.unit)) || {}).unit);
+      for (const p of g.points) p.plot = p.num !== null && p.t > 0 && unitCompat(normUnit(p.unit), base);
+      delete g.seen;
+      out.find((c) => c.cat === g.cat).items.push(g);
+    }
+    for (const c of out) c.items.sort((a, b) => (b.points[0].t - a.points[0].t) || a.name.localeCompare(b.name));
+    return out.filter((c) => c.items.length);
+  }
+
+  const api = { icdCode, normName, readMeds, groupMeds, lookup, findMedTable,
+    readLabs, findLabTable, normLabName, labCtx, matchLab, parseResult, parseRef, labFlag, dateNum, groupLabs };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SeeUrMeds = api;
 })(typeof self !== 'undefined' ? self : this);

@@ -16,8 +16,13 @@ window.chrome = {
   runtime: { getURL: (p) => '../extension/' + p, onMessage: { addListener() {} } },
   tabs: {
     query: async () => [{ id: 1 }], onActivated: { addListener() {} },
-    sendMessage: async () => { await ready; const meds = SeeUrMeds.readMeds(frame.contentDocument); window.__meds = meds; return meds ? { meds } : undefined; },
+    sendMessage: async () => { await ready; const meds = SeeUrMeds.readMeds(frame.contentDocument), labs = meds ? null : SeeUrMeds.readLabs(frame.contentDocument); window.__meds = meds; window.__labs = labs; return meds || labs ? { meds, labs } : undefined; },
   },
 };
 </script>
 <script src="../extension/panel.js"></script>
+<script>
+// ?open=N:自動展開前 N 個檢驗項目(截圖檢查用)
+const nOpen = +new URLSearchParams(location.search).get('open') || 0;
+if (nOpen) setTimeout(() => document.querySelectorAll('details.lab').forEach((d, i) => { if (i < nOpen) d.open = true; }), 1200);
+</script>
