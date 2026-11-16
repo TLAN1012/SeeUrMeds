@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "藥看仔細 SeeUrMeds",
+  "short_name": "SeeUrMeds",
+  "version": "0.1.0",
+  "description": "在健保雲端藥歷頁旁邊列出病人用藥的外觀照、形狀、顏色與刻字。所有比對都在本機瀏覽器進行，不外送病人資料。",
+  "minimum_chrome_version": "116",
+  "permissions": ["sidePanel"],
+  "action": { "default_title": "藥看仔細 SeeUrMeds" },
+  "side_panel": { "default_path": "panel.html" },
+  "background": { "service_worker": "background.js" },
+  "icons": { "16": "icons/16.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "content_scripts": [
+    {
+      "matches": ["https://medcloud2.nhi.gov.tw/*", "https://medcloud.nhi.gov.tw/*"],
+      "js": ["core.js", "content.js"],
+      "all_frames": true,
+      "run_at": "document_idle"
+    }
+  ]
+}

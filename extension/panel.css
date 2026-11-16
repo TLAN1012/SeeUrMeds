@@ -1,0 +1,30 @@
+:root { --bg:#f6f7f9; --card:#fff; --ink:#1c2430; --sub:#5b6676; --line:#dde2e8; --accent:#0b6e6e; --warn:#8a5a00; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#14181d; --card:#1d232b; --ink:#e8ecf1; --sub:#9aa6b5; --line:#2e3742; --accent:#5fd0c8; --warn:#e0b458; }
+}
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 -apple-system,"Segoe UI","Microsoft JhengHei","PingFang TC",sans-serif; }
+header { position:sticky; top:0; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:10px 12px; background:var(--card); border-bottom:1px solid var(--line); }
+h1 { margin:0; font-size:16px; } h1 span { font-weight:400; color:var(--sub); font-size:13px; margin-left:4px; }
+button { font:inherit; padding:4px 10px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--ink); cursor:pointer; }
+button:hover { border-color:var(--accent); }
+#status { margin:10px 12px; color:var(--sub); } #status:empty { display:none; }
+main { padding:0 12px 12px; }
+h2 { position:sticky; top:45px; z-index:1; margin:14px -12px 8px; padding:6px 12px; font-size:14px; background:var(--bg);
+  border-bottom:2px solid var(--accent); display:flex; justify-content:space-between; gap:8px; }
+h2 small { font-weight:400; color:var(--sub); }
+.med { display:grid; grid-template-columns:132px 1fr; gap:10px; padding:10px; margin-bottom:8px; background:var(--card);
+  border:1px solid var(--line); border-radius:8px; }
+.pic { width:132px; height:100px; border-radius:6px; background:var(--bg); display:flex; align-items:center; justify-content:center;
+  overflow:hidden; color:var(--sub); font-size:12px; text-align:center; padding:4px; }
+.pic img { width:100%; height:100%; object-fit:contain; cursor:zoom-in; background:#fff; }
+.med > div { min-width:0; }
+.name { font-weight:600; word-break:break-word; }
+.zh { color:var(--accent); }
+.sub { color:var(--sub); font-size:13px; word-break:break-word; }
+.look { margin-top:4px; font-size:13px; }
+.look b { font-weight:600; }
+.tag { display:inline-block; margin-top:4px; padding:0 6px; border-radius:4px; border:1px solid var(--line); font-size:12px; color:var(--sub); }
+.nomatch { color:var(--warn); }
+footer { padding:12px; color:var(--sub); font-size:12px; border-top:1px solid var(--line); }
