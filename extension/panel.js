@@ -1,6 +1,8 @@
 (function () {
   'use strict';
-  const { groupMeds, lookup, groupLabs, longTermMeds } = self.SeeUrMeds;
+  const { groupMeds, lookup, groupLabs, longTermMeds, newerNotice } = self.SeeUrMeds;
+  const REPO = 'https://github.com/TLAN1012/SeeUrMeds';
+  const RAW = 'https://raw.githubusercontent.com/TLAN1012/SeeUrMeds/main/extension/';
   const IMG = 'https://mcp.fda.gov.tw/insert/shapeImg/';
   const $ = (id) => document.getElementById(id);
   let dataPromise = null, labDictPromise = null;
@@ -218,6 +220,32 @@
     status.textContent = `畫面上 ${meds.length} 筆，合併後 ${total} 項，${hit} 項有外觀照。只讀目前這一頁顯示的列。`;
   }
 
+  // 一天最多問一次 GitHub 有沒有新版(只讀版本號與對照表日期,不帶任何資料);連不上就不顯示
+  async function checkUpdate() {
+    const KEY = 'seeurmeds:update', DAY = 24 * 3600 * 1000;
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(KEY)); } catch (e) { /* 沒有或壞掉就重問 */ }
+    if (!saved || !(Date.now() - saved.t < DAY)) {
+      try {
+        const remote = { version: (await (await fetch(RAW + 'manifest.json', { cache: 'no-store' })).json()).version };
+        // 對照表有 5 MB,只拿開頭那一小段(建立日期寫在最前面)
+        const head = await (await fetch(RAW + 'data/drugs.json', { cache: 'no-store', headers: { Range: 'bytes=0-63' } })).body.getReader();
+        const first = await head.read(); head.cancel().catch(() => {});
+        const m = /"built":"(\d{4}-\d\d-\d\d)"/.exec(new TextDecoder().decode(first.value || new Uint8Array()));
+        remote.built = m ? m[1] : '';
+        saved = { t: Date.now(), remote };
+        localStorage.setItem(KEY, JSON.stringify(saved));
+      } catch (e) { return; }
+    }
+    const news = newerNotice({ version: chrome.runtime.getManifest().version, built: (await loadData()).built }, saved.remote);
+    const box = $('update');
+    box.hidden = !news.length;
+    if (!news.length) return;
+    const a = el('a', '', '到 GitHub 下載');
+    a.href = REPO; a.target = '_blank'; a.rel = 'noopener';
+    box.replaceChildren('有新版：' + news.join('、') + '。', a, '後，在 chrome://extensions 按這個擴充功能的重新載入。');
+  }
+
   $('reload').addEventListener('click', refresh);
   chrome.runtime.onMessage.addListener((msg, sender) => {
     if (!msg || msg.type !== 'seeurmeds:changed' || !sender.tab) return;
@@ -225,4 +253,5 @@
   });
   chrome.tabs.onActivated.addListener(refresh);
   refresh();
+  checkUpdate();
 })();

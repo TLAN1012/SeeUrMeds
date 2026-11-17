@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="../extension/panel.css">
 <iframe id="page" style="display:none"></iframe>
 <header><h1>藥看仔細 <span>SeeUrMeds</span></h1><button id="reload" type="button">重新讀取</button></header>
-<p id="status"></p><main id="list"></main>
+<p id="update" hidden></p><p id="status"></p><main id="list"></main>
 <footer><span id="built"></span> 測試頁:用假的 chrome API 讀 fixture。</footer>
 <script src="../extension/core.js"></script>
 <script>
@@ -13,7 +13,8 @@ const fixture = new URLSearchParams(location.search).get('f') || 'fixture_one_ta
 const frame = document.getElementById('page');
 const ready = new Promise((ok) => { frame.onload = ok; frame.style.cssText = 'position:absolute;left:-9999px;width:1200px;height:800px'; frame.src = fixture; });
 window.chrome = {
-  runtime: { getURL: (p) => '../extension/' + p, onMessage: { addListener() {} } },
+  // ?ver=0.2.0:假裝手上是舊版,看「有新版」提示(會真的連 GitHub)
+  runtime: { getURL: (p) => '../extension/' + p, onMessage: { addListener() {} }, getManifest: () => ({ version: new URLSearchParams(location.search).get('ver') || '99.0.0' }) },
   tabs: {
     query: async () => [{ id: 1 }], onActivated: { addListener() {} },
     sendMessage: async () => { await ready; const meds = SeeUrMeds.readMeds(frame.contentDocument), labs = meds ? null : SeeUrMeds.readLabs(frame.contentDocument); window.__meds = meds; window.__labs = labs; return meds || labs ? { meds, labs } : undefined; },

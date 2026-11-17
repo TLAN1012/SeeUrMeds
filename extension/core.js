@@ -354,8 +354,22 @@
     return out.filter((c) => c.items.length);
   }
 
+  // 有沒有比手上這份新的版本。local/remote = { version:'0.3.1', built:'2026-11-16' };remote 讀不到的欄位留空
+  function newerNotice(local, remote) {
+    const out = [];
+    const v = (x) => String(x || '').split('.').map((n) => parseInt(n, 10) || 0);
+    const a = v(local.version), b = v(remote && remote.version);
+    for (let i = 0; i < 3; i++) {
+      if ((b[i] || 0) > (a[i] || 0)) { out.push('程式 ' + remote.version); break; }
+      if ((b[i] || 0) < (a[i] || 0)) break;
+    }
+    const D = /^\d{4}-\d\d-\d\d$/;
+    if (remote && D.test(remote.built || '') && D.test(local.built || '') && remote.built > local.built) out.push('藥品對照表 ' + remote.built);
+    return out;
+  }
+
   const api = { icdCode, normName, readMeds, groupMeds, lookup, findMedTable,
-    readLabs, findLabTable, normLabName, labCtx, matchLab, parseResult, parseRef, labFlag, dateNum, groupLabs, longTermMeds };
+    readLabs, findLabTable, normLabName, labCtx, matchLab, parseResult, parseRef, labFlag, dateNum, groupLabs, longTermMeds, newerNotice };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SeeUrMeds = api;
 })(typeof self !== 'undefined' ? self : this);

@@ -100,3 +100,12 @@ assert.strictEqual(c.parseResult('１２.３ g/dL', 'g/dL').num, 12.3, '全形�
   assert.strictEqual(c.longTermMeds([mk('A', '115/05/16', 28)], new Date(2026, 10, 16)).length, 1, '剛好半年算在內');
   assert.strictEqual(c.longTermMeds([mk('A', '115/05/15', 28)], new Date(2026, 10, 16)).length, 0, '超過半年不算');
 }
+{
+  const me = { version: '0.3.1', built: '2026-11-16' };
+  assert.deepStrictEqual(c.newerNotice(me, { version: '0.3.1', built: '2026-11-16' }), [], '一樣就不提示');
+  assert.deepStrictEqual(c.newerNotice(me, { version: '0.3.1', built: '2026-12-01' }), ['藥品對照表 2026-12-01']);
+  assert.deepStrictEqual(c.newerNotice(me, { version: '0.10.0', built: '2026-12-01' }), ['程式 0.10.0', '藥品對照表 2026-12-01'], '版本號照數字比,不是照字串');
+  assert.deepStrictEqual(c.newerNotice(me, { version: '0.3.0', built: '2026-10-01' }), [], '比較舊不提示');
+  assert.deepStrictEqual(c.newerNotice(me, { version: '', built: '' }), [], '讀不到不提示');
+  assert.deepStrictEqual(c.newerNotice(me, null), []);
+}
